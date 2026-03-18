@@ -88,8 +88,8 @@
       document.getElementById('total-runs').textContent = summary.total || 0;
       document.getElementById('total-time').textContent = Math.round((summary.totalTime || 0) / 3600000 * 10) / 10 + 'h';
       
-      const success = Object.values(summary.byProject || {}).reduce((s: number, p: any) => s + p.success, 0);
-      const failed = Object.values(summary.byProject || {}).reduce((s: number, p: any) => s + p.failed, 0);
+      const success = Object.values(summary.byProject || {}).reduce((s, p) => s + p.success, 0);
+      const failed = Object.values(summary.byProject || {}).reduce((s, p) => s + p.failed, 0);
       const rate = (summary.total > 0) ? Math.round(success / (success + failed) * 100) : 0;
       document.getElementById('success-rate').textContent = rate + '%';
       document.getElementById('project-count').textContent = Object.keys(summary.byProject || {}).length;
