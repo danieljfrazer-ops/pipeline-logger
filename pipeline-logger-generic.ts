@@ -16,13 +16,14 @@ interface PipelineRun {
   projectId: string;
   projectName: string;
   runType: string;
+  tshirtSize?: 'XS' | 'S' | 'M' | 'L' | 'XL';
+  severity?: 'low' | 'medium' | 'high' | 'critical';
   description?: string;
   version?: string;
   status: string;
   startedAt: string;
   completedAt: string;
   durationMs: number;
-  durationMinutes?: number;
   actualDurationMinutes?: number;
   architectTimeMs: number;
   coderTimeMs: number;
@@ -58,12 +59,14 @@ function parseArgs() {
   return {
     project: get('project', 'unknown'),
     type: get('type', 'MAINTENANCE'),
+    tshirtSize: get('tshirt-size'),
+    severity: get('severity'),
     version: get('version'),
     status: get('status', 'SUCCESS'),
     description: get('description'),
     durationMs: parseInt(get('duration-ms', '0') || '0', 10),
-    startedAt: get('started-at'),  // ISO timestamp for auto-capture
-    completedAt: get('completed-at'), // ISO timestamp for auto-capture
+    startedAt: get('started-at'),
+    completedAt: get('completed-at'),
     architectMs: parseInt(get('architect-ms', '0') || '0', 10),
     coderMs: parseInt(get('coder-ms', '0') || '0', 10),
     testerMs: parseInt(get('tester-ms', '0') || '0', 10),
@@ -105,13 +108,14 @@ async function main() {
       projectId: opts.project || 'unknown',
       projectName: opts.project.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
       runType: opts.type,
+      tshirtSize: opts.tshirtSize as any,
+      severity: opts.severity as any,
       description: opts.description || undefined,
       version: opts.version || undefined,
       status: opts.status,
       startedAt: startedAt.toISOString(),
       completedAt: completedAt.toISOString(),
       durationMs: durationMs,
-      durationMinutes: Math.round(durationMs / 60000),
       architectTimeMs: opts.architectMs,
       coderTimeMs: opts.coderMs,
       testerTimeMs: opts.testerMs,

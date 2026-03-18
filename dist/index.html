@@ -17,57 +17,69 @@
     <div class="flex items-center justify-between mb-8">
       <div>
         <h1 class="text-2xl font-semibold">📊 Pipeline Dashboard</h1>
-        <p class="text-gray-400 mt-1">Development velocity & health metrics</p>
+        <p class="text-gray-400 mt-1">Development velocity & quality metrics</p>
       </div>
       <button onclick="loadData()" class="px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700">Refresh</button>
     </div>
     
-    <!-- Stats Cards -->
+    <!-- Key Metrics -->
     <div class="grid grid-cols-4 gap-4 mb-8">
       <div class="card p-4">
         <div class="text-gray-400 text-sm">Total Runs</div>
         <div class="stat-value" id="total-runs">-</div>
       </div>
       <div class="card p-4">
-        <div class="text-gray-400 text-sm">Estimated Time</div>
-        <div class="stat-value" id="total-time">-</div>
+        <div class="text-gray-400 text-sm">Avg Feature Time</div>
+        <div class="stat-value" id="avg-feature">-</div>
       </div>
       <div class="card p-4">
-        <div class="text-gray-400 text-sm">Actual Time</div>
-        <div class="stat-value" id="actual-time">-</div>
+        <div class="text-gray-400 text-sm">Avg Bug Fix Time</div>
+        <div class="stat-value" id="avg-bug">-</div>
       </div>
       <div class="card p-4">
-        <div class="text-gray-400 text-sm">Projects</div>
-        <div class="stat-value" id="project-count">-</div>
+        <div class="text-gray-400 text-sm">Success Rate</div>
+        <div class="stat-value" id="success-rate">-</div>
       </div>
     </div>
     
-    <!-- By Project / By Type -->
-    <div class="grid grid-cols-2 gap-6">
+    <!-- T-Shirt Size Breakdown -->
+    <div class="grid grid-cols-2 gap-6 mb-6">
       <div class="card p-5">
-        <h3 class="text-lg font-medium mb-4">By Project</h3>
+        <h3 class="text-lg font-medium mb-4">📏 Feature Time by T-Shirt Size</h3>
+        <div id="tshirt-stats"></div>
+      </div>
+      <div class="card p-5">
+        <h3 class="text-lg font-medium mb-4">🐛 Bug Fix Time by Severity</h3>
+        <div id="severity-stats"></div>
+      </div>
+    </div>
+    
+    <!-- Velocity & Quality -->
+    <div class="grid grid-cols-2 gap-6 mb-6">
+      <div class="card p-5">
+        <h3 class="text-lg font-medium mb-4">📈 By Project</h3>
         <div id="by-project"></div>
       </div>
       <div class="card p-5">
-        <h3 class="text-lg font-medium mb-4">By Type</h3>
+        <h3 class="text-lg font-medium mb-4">🔧 By Type</h3>
         <div id="by-type"></div>
       </div>
     </div>
     
     <!-- Recent Runs -->
-    <div class="card p-5 mt-6">
+    <div class="card p-5">
       <h3 class="text-lg font-medium mb-4">Recent Runs</h3>
-      <table class="w-full">
+      <table class="w-full text-sm">
         <thead>
           <tr class="text-left text-gray-400 border-b border-gray-700">
             <th class="pb-2">Project</th>
             <th class="pb-2">Type</th>
+            <th class="pb-2">T-Shirt</th>
             <th class="pb-2">Version</th>
             <th class="pb-2">Description</th>
-            <th class="pb-2">Est.</th>
-            <th class="pb-2">Actual</th>
+            <th class="pb-2">Time</th>
+            <th class="pb-2">Tests</th>
             <th class="pb-2">Status</th>
-            <th class="pb-2">Date</th>
           </tr>
         </thead>
         <tbody id="recent-runs"></tbody>
@@ -85,23 +97,74 @@
       const runs = await runsRes.json();
       const summary = await summaryRes.json();
       
-      // Stats
+      // Key metrics
       document.getElementById('total-runs').textContent = summary.total || 0;
-      document.getElementById('total-time').textContent = Math.round((summary.totalTime || 0) / 3600000 * 10) / 10 + 'h';
       
-      // Calculate actual time from runs
-      const actualMs = (runs || []).reduce((sum, r) => {
-        const actual = r.actualDurationMinutes || r.durationMinutes || Math.round(r.durationMs / 60000);
-        return sum + (actual * 60000);
-      }, 0);
-      document.getElementById('actual-time').textContent = Math.round(actualMs / 3600000 * 10) / 10 + 'h';
+      // Calculate avg times
+      const features = runs.filter(r => r.runType === 'FEATURE_BUILD');
+      const bugs = runs.filter(r => r.runType === 'BUG_FIX');
       
-      document.getElementById('project-count').textContent = Object.keys(summary.byProject || {}).length;
+      const avgFeature = features.length > 0 
+        ? Math.round(features.reduce((sum, r) => sum + (r.actualDurationMinutes || Math.round(r.durationMs/60000)), 0) / features.length)
+        : 0;
+      const avgBug = bugs.length > 0
+        ? Math.round(bugs.reduce((sum, r) => sum + (r.actualDurationMinutes || Math.round(r.durationMs/60000)), 0) / bugs.length)
+        : 0;
+      
+      document.getElementById('avg-feature').textContent = avgFeature + 'm';
+      document.getElementById('avg-bug').textContent = avgBug + 'm';
+      
+      // Success rate
+      let success = 0, failed = 0;
+      Object.values(summary.byProject || {}).forEach(p => { success += p.success; failed += p.failed; });
+      const rate = (summary.total > 0) ? Math.round(success / (success + failed) * 100) : 0;
+      document.getElementById('success-rate').textContent = rate + '%';
+      
+      // T-Shirt Size Stats
+      const tshirtStats = {};
+      features.forEach(r => {
+        const size = r.tshirtSize || 'Unknown';
+        if (!tshirtStats[size]) tshirtStats[size] = { count: 0, totalTime: 0 };
+        tshirtStats[size].count++;
+        tshirtStats[size].totalTime += r.actualDurationMinutes || Math.round(r.durationMs/60000);
+      });
+      
+      const tshirtDiv = document.getElementById('tshirt-stats');
+      const tshirtOrder = ['XS', 'S', 'M', 'L', 'XL'];
+      tshirtDiv.innerHTML = tshirtOrder.filter(s => tshirtStats[s]).map(size => {
+        const d = tshirtStats[size];
+        const avg = Math.round(d.totalTime / d.count);
+        return `<div class="flex justify-between items-center py-2 border-b border-gray-800">
+          <span><span class="px-2 py-0.5 rounded text-sm ${size === 'XS' ? 'bg-green-900 text-green-300' : size === 'S' ? 'bg-blue-900 text-blue-300' : size === 'M' ? 'bg-yellow-900 text-yellow-300' : size === 'L' ? 'bg-orange-900 text-orange-300' : 'bg-red-900 text-red-300'}">${size}</span> (${d.count})</span>
+          <span class="text-gray-400">avg ${avg}m</span>
+        </div>`;
+      }).join('') || '<p class="text-gray-500">No T-shirt data</p>';
+      
+      // Severity Stats
+      const severityStats = {};
+      bugs.forEach(r => {
+        const sev = r.severity || 'unknown';
+        if (!severityStats[sev]) severityStats[sev] = { count: 0, totalTime: 0 };
+        severityStats[sev].count++;
+        severityStats[sev].totalTime += r.actualDurationMinutes || Math.round(r.durationMs/60000);
+      });
+      
+      const severityDiv = document.getElementById('severity-stats');
+      const severityOrder = ['low', 'medium', 'high', 'critical'];
+      severityDiv.innerHTML = severityOrder.filter(s => severityStats[s]).map(sev => {
+        const d = severityStats[sev];
+        const avg = Math.round(d.totalTime / d.count);
+        const colors = { low: 'text-green-400', medium: 'text-yellow-400', high: 'text-orange-400', critical: 'text-red-400' };
+        return `<div class="flex justify-between items-center py-2 border-b border-gray-800">
+          <span class="${colors[sev]}">${sev.toUpperCase()} (${d.count})</span>
+          <span class="text-gray-400">avg ${avg}m</span>
+        </div>`;
+      }).join('') || '<p class="text-gray-500">No severity data</p>';
       
       // By Project
       const projectDiv = document.getElementById('by-project');
       projectDiv.innerHTML = Object.entries(summary.byProject || {}).map(([name, data]) => `
-        <div class="flex justify-between items-center">
+        <div class="flex justify-between items-center py-2 border-b border-gray-800">
           <span>${name}</span>
           <span class="text-gray-400">${data.runs} runs</span>
         </div>
@@ -109,30 +172,32 @@
       
       // By Type
       const typeDiv = document.getElementById('by-type');
-      typeDiv.innerHTML = Object.entries(summary.byType || {}).map(([type, data]) => `
-        <div class="flex justify-between items-center">
-          <span>${type}</span>
+      typeDiv.innerHTML = Object.entries(summary.byType || {}).map(([type, data]) => {
+        const colors = { FEATURE_BUILD: 'text-blue-400', BUG_FIX: 'text-red-400', MAINTENANCE: 'text-gray-400' };
+        return `<div class="flex justify-between items-center py-2 border-b border-gray-800">
+          <span class="${colors[type] || ''}">${type}</span>
           <span class="text-gray-400">${data.runs} runs</span>
-        </div>
-      `).join('') || '<p class="text-gray-500">No data</p>';
+        </div>`;
+      }).join('') || '<p class="text-gray-500">No data</p>';
       
       // Recent Runs
       const tbody = document.getElementById('recent-runs');
       tbody.innerHTML = (runs || []).slice(0, 10).map(r => {
-        const estMins = Math.round(r.durationMs / 60000);
-        const actualMins = r.actualDurationMinutes || estMins;
+        const mins = r.actualDurationMinutes || Math.round(r.durationMs / 60000);
+        const testRate = r.testPassRate !== undefined ? r.testPassRate + '%' : '-';
+        const tshirt = r.tshirtSize ? `<span class="px-1.5 py-0.5 rounded text-xs ${r.tshirtSize === 'S' ? 'bg-blue-900' : r.tshirtSize === 'M' ? 'bg-yellow-900' : r.tshirtSize === 'L' ? 'bg-orange-900' : 'bg-gray-700'}">${r.tshirtSize}</span>` : '-';
         return `
         <tr class="border-b border-gray-800">
           <td class="py-2">${r.projectName || r.projectId}</td>
-          <td class="py-2"><span class="text-xs px-2 py-1 rounded bg-blue-900 text-blue-300">${r.runType}</span></td>
+          <td class="py-2"><span class="text-xs px-2 py-1 rounded ${r.runType === 'FEATURE_BUILD' ? 'bg-blue-900 text-blue-300' : 'bg-red-900 text-red-300'}">${r.runType}</span></td>
+          <td class="py-2">${tshirt}</td>
           <td class="py-2 text-gray-400">v${r.version || '?'}</td>
-          <td class="py-2 text-gray-300 text-sm">${r.description || '-'}</td>
-          <td class="py-2 text-gray-400">${estMins}m</td>
-          <td class="py-2 ${actualMins < estMins ? 'text-green-400' : 'text-yellow-400'}">${actualMins}m</td>
+          <td class="py-2 text-gray-300 text-xs max-w-xs truncate">${r.description || '-'}</td>
+          <td class="py-2">${mins}m</td>
+          <td class="py-2 text-gray-400">${testRate}</td>
           <td class="py-2 ${r.status === 'SUCCESS' ? 'text-green-400' : 'text-red-400'}">${r.status}</td>
-          <td class="py-2 text-gray-400">${new Date(r.startedAt).toLocaleDateString()}</td>
-        </tr>
-      `}).join('') || '<tr><td colspan="8" class="py-4 text-center text-gray-500">No runs yet</td></tr>';
+        </tr>`;
+      }).join('') || '<tr><td colspan="8" class="py-4 text-center text-gray-500">No runs yet</td></tr>';
     }
     
     loadData();
