@@ -3,19 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pipeline Dashboard</title>
+  <title>Software Factory Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body { background: #0f0f12; color: white; }
     .card { background: #1a1a1f; border: 1px solid #2a2a30; border-radius: 12px; }
     .stat-value { font-size: 1.5rem; font-weight: 600; }
     .stat-label { font-size: 0.75rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; }
+    .tab-btn { padding: 0.5rem 1rem; border-bottom: 2px solid transparent; }
+    .tab-btn.active { border-bottom-color: #3b82f6; color: #3b82f6; }
   </style>
 </head>
 <body class="min-h-screen p-6">
   <div class="max-w-7xl mx-auto">
     <!-- Header -->
-    <div class="flex items-center justify-between mb-6">
+    <div class="flex items-center justify-between mb-4">
       <div>
         <h1 class="text-2xl font-semibold">🏭 Software Factory Dashboard</h1>
         <p class="text-gray-400 mt-1">Development velocity & utilization metrics</p>
@@ -23,8 +26,15 @@
       <button onclick="loadData()" class="px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700">Refresh</button>
     </div>
     
+    <!-- Tabs -->
+    <div class="flex gap-4 mb-4 border-b border-gray-700">
+      <button onclick="switchTab('overview')" id="tab-overview" class="tab-btn active">📊 Overview</button>
+      <button onclick="switchTab('visual')" id="tab-visual" class="tab-btn">📈 Visual</button>
+      <button onclick="switchTab('trends')" id="tab-trends" class="tab-btn">📉 Trends</button>
+    </div>
+    
     <!-- Filters -->
-    <div class="card p-4 mb-6">
+    <div class="card p-4 mb-4">
       <div class="flex flex-wrap gap-4 items-center">
         <div>
           <label class="stat-label block mb-1">Project</label>
@@ -55,167 +65,296 @@
       </div>
     </div>
     
-    <!-- Factory Utilization Row -->
-    <div class="grid grid-cols-5 gap-4 mb-6">
-      <div class="card p-4 border-blue-500/50">
-        <div class="stat-label">🏭 SF Util</div>
-        <div class="stat-value text-blue-400" id="factory-uptime">-</div>
+    <!-- TAB 1: Overview -->
+    <div id="tab-content-overview">
+      <!-- Factory Utilization Row -->
+      <div class="grid grid-cols-5 gap-4 mb-4">
+        <div class="card p-4 border-blue-500/50">
+          <div class="stat-label">🏭 SF Util</div>
+          <div class="stat-value text-blue-400" id="factory-uptime">-</div>
+        </div>
+        <div class="card p-4">
+          <div class="stat-label">⚡ Throughput (7d)</div>
+          <div class="stat-value" id="throughput">-</div>
+        </div>
+        <div class="card p-4">
+          <div class="stat-label">📦 Runs in Queue</div>
+          <div class="stat-value" id="queue-depth">0</div>
+        </div>
+        <div class="card p-4">
+          <div class="stat-label">⏱️ Avg Idle Time</div>
+          <div class="stat-value" id="idle-time">-</div>
+        </div>
+        <div class="card p-4">
+          <div class="stat-label">🎯 Success Rate</div>
+          <div class="stat-value" id="success-rate">-</div>
+        </div>
       </div>
-      <div class="card p-4">
-        <div class="stat-label">⚡ Throughput (7d)</div>
-        <div class="stat-value" id="throughput">-</div>
+      
+      <!-- Key Metrics Grid -->
+      <div class="grid grid-cols-5 gap-4 mb-4">
+        <div class="card p-4">
+          <div class="stat-label">Total Runs</div>
+          <div class="stat-value" id="total-runs">-</div>
+        </div>
+        <div class="card p-4">
+          <div class="stat-label">Avg Feature Time</div>
+          <div class="stat-value" id="avg-feature">-</div>
+        </div>
+        <div class="card p-4">
+          <div class="stat-label">Avg Bug Fix Time</div>
+          <div class="stat-value" id="avg-bug">-</div>
+        </div>
+        <div class="card p-4">
+          <div class="stat-label">Test Pass Rate</div>
+          <div class="stat-value" id="test-pass-rate">-</div>
+        </div>
+        <div class="card p-4">
+          <div class="stat-label">Rework Rate</div>
+          <div class="stat-value" id="rework-rate">-</div>
+        </div>
       </div>
-      <div class="card p-4">
-        <div class="stat-label">📦 Runs in Queue</div>
-        <div class="stat-value" id="queue-depth">0</div>
-      </div>
-      <div class="card p-4">
-        <div class="stat-label">⏱️ Avg Idle Time</div>
-        <div class="stat-value" id="idle-time">-</div>
-      </div>
-      <div class="card p-4">
-        <div class="stat-label">🎯 Success Rate</div>
-        <div class="stat-value" id="success-rate">-</div>
-      </div>
-    </div>
-    
-    <!-- Key Metrics Grid -->
-    <div class="grid grid-cols-5 gap-4 mb-6">
-      <div class="card p-4">
-        <div class="stat-label">Total Runs</div>
-        <div class="stat-value" id="total-runs">-</div>
-      </div>
-      <div class="card p-4">
-        <div class="stat-label">Avg Feature Time</div>
-        <div class="stat-value" id="avg-feature">-</div>
-      </div>
-      <div class="card p-4">
-        <div class="stat-label">Avg Bug Fix Time</div>
-        <div class="stat-value" id="avg-bug">-</div>
-      </div>
-      <div class="card p-4">
-        <div class="stat-label">Test Pass Rate</div>
-        <div class="stat-value" id="test-pass-rate">-</div>
-      </div>
-      <div class="card p-4">
-        <div class="stat-label">Rework Rate</div>
-        <div class="stat-value" id="rework-rate">-</div>
-      </div>
-    </div>
-    
-    <!-- Velocity & Quality Row -->
-    <div class="grid grid-cols-2 gap-6 mb-6">
-      <!-- Velocity Metrics -->
-      <div class="card p-5">
-        <h3 class="text-lg font-medium mb-4">🚀 Velocity Metrics</h3>
-        <div class="grid grid-cols-2 gap-4">
-          <div class="bg-gray-800 rounded p-3">
-            <div class="stat-label">Features This Week</div>
-            <div class="text-2xl font-bold" id="features-week">0</div>
+      
+      <!-- Velocity & Quality Row -->
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="card p-5">
+          <h3 class="text-lg font-medium mb-4">🚀 Velocity Metrics</h3>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="bg-gray-800 rounded p-3">
+              <div class="stat-label">Features This Week</div>
+              <div class="text-2xl font-bold" id="features-week">0</div>
+            </div>
+            <div class="bg-gray-800 rounded p-3">
+              <div class="stat-label">Bugs This Week</div>
+              <div class="text-2xl font-bold" id="bugs-week">0</div>
+            </div>
+            <div class="bg-gray-800 rounded p-3">
+              <div class="stat-label">Avg Cycle Time</div>
+              <div class="text-2xl font-bold" id="avg-cycle">0m</div>
+            </div>
+            <div class="bg-gray-800 rounded p-3">
+              <div class="stat-label">Bugs/Feature</div>
+              <div class="text-2xl font-bold" id="bugs-per-feature">0</div>
+            </div>
           </div>
-          <div class="bg-gray-800 rounded p-3">
-            <div class="stat-label">Bugs This Week</div>
-            <div class="text-2xl font-bold" id="bugs-week">0</div>
-          </div>
-          <div class="bg-gray-800 rounded p-3">
-            <div class="stat-label">Avg Cycle Time</div>
-            <div class="text-2xl font-bold" id="avg-cycle">0m</div>
-          </div>
-          <div class="bg-gray-800 rounded p-3">
-            <div class="stat-label">Bugs/Feature</div>
-            <div class="text-2xl font-bold" id="bugs-per-feature">0</div>
+        </div>
+        
+        <div class="card p-5">
+          <h3 class="text-lg font-medium mb-4">🎯 Quality Metrics</h3>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="bg-gray-800 rounded p-3">
+              <div class="stat-label">Tests Passed</div>
+              <div class="text-2xl font-bold text-green-400" id="tests-passed">0</div>
+            </div>
+            <div class="bg-gray-800 rounded p-3">
+              <div class="stat-label">Tests Failed</div>
+              <div class="text-2xl font-bold text-red-400" id="tests-failed">0</div>
+            </div>
+            <div class="bg-gray-800 rounded p-3">
+              <div class="stat-label">UAT Passed</div>
+              <div class="text-2xl font-bold text-purple-400" id="uat-passed">0</div>
+            </div>
+            <div class="bg-gray-800 rounded p-3">
+              <div class="stat-label">UAT Failed</div>
+              <div class="text-2xl font-bold text-yellow-400" id="uat-failed">0</div>
+            </div>
           </div>
         </div>
       </div>
       
-      <!-- Quality Metrics -->
+      <!-- Effort Breakdown -->
+      <div class="card p-5 mb-4">
+        <h3 class="text-lg font-medium mb-4">⚙️ Effort Breakdown</h3>
+        <div class="grid grid-cols-5 gap-4">
+          <div class="bg-gray-800 rounded p-3">
+            <div class="stat-label">Coding Time</div>
+            <div class="text-xl font-bold text-blue-400" id="effort-coder">0h</div>
+          </div>
+          <div class="bg-gray-800 rounded p-3">
+            <div class="stat-label">Testing Time</div>
+            <div class="text-xl font-bold text-green-400" id="effort-tester">0h</div>
+          </div>
+          <div class="bg-gray-800 rounded p-3">
+            <div class="stat-label">Total Effort</div>
+            <div class="text-xl font-bold" id="effort-total">0h</div>
+          </div>
+          <div class="bg-gray-800 rounded p-3">
+            <div class="stat-label">Avg Dependencies</div>
+            <div class="text-xl font-bold" id="avg-deps">0</div>
+          </div>
+          <div class="bg-gray-800 rounded p-3">
+            <div class="stat-label">API Changes</div>
+            <div class="text-xl font-bold text-purple-400" id="api-changes">0</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- T-Shirt & Severity -->
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="card p-5">
+          <h3 class="text-lg font-medium mb-4">📏 Feature Time by T-Shirt Size</h3>
+          <div id="tshirt-stats"></div>
+        </div>
+        <div class="card p-5">
+          <h3 class="text-lg font-medium mb-4">🐛 Bug Fix Time by Severity</h3>
+          <div id="severity-stats"></div>
+        </div>
+      </div>
+      
+      <!-- Recent Runs Table -->
       <div class="card p-5">
-        <h3 class="text-lg font-medium mb-4">🎯 Quality Metrics</h3>
-        <div class="grid grid-cols-2 gap-4">
-          <div class="bg-gray-800 rounded p-3">
-            <div class="stat-label">Tests Passed</div>
-            <div class="text-2xl font-bold text-green-400" id="tests-passed">0</div>
-          </div>
-          <div class="bg-gray-800 rounded p-3">
-            <div class="stat-label">Tests Failed</div>
-            <div class="text-2xl font-bold text-red-400" id="tests-failed">0</div>
-          </div>
-          <div class="bg-gray-800 rounded p-3">
-            <div class="stat-label">Reopened Bugs</div>
-            <div class="text-2xl font-bold text-yellow-400" id="reopened-bugs">0</div>
-          </div>
-          <div class="bg-gray-800 rounded p-3">
-            <div class="stat-label">Failed Runs</div>
-            <div class="text-2xl font-bold text-red-400" id="failed-runs">0</div>
-          </div>
+        <h3 class="text-lg font-medium mb-4">Recent Runs</h3>
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-gray-400 border-b border-gray-700">
+              <th class="pb-2">Project</th>
+              <th class="pb-2">Type</th>
+              <th class="pb-2">T-Shirt</th>
+              <th class="pb-2">Version</th>
+              <th class="pb-2">Description</th>
+              <th class="pb-2">Time</th>
+              <th class="pb-2">Tests</th>
+              <th class="pb-2">Status</th>
+            </tr>
+          </thead>
+          <tbody id="recent-runs"></tbody>
+        </table>
+      </div>
+    </div>
+    
+    <!-- TAB 2: Visual Analytics -->
+    <div id="tab-content-visual" class="hidden">
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <!-- Run Type Pie -->
+        <div class="card p-5">
+          <h3 class="text-lg font-medium mb-4">📊 Run Type Distribution</h3>
+          <canvas id="chart-run-type" height="200"></canvas>
+        </div>
+        <!-- T-Shirt Pie -->
+        <div class="card p-5">
+          <h3 class="text-lg font-medium mb-4">👕 T-Shirt Size Distribution</h3>
+          <canvas id="chart-tshirt" height="200"></canvas>
+        </div>
+        <!-- Time by Project Bar -->
+        <div class="card p-5">
+          <h3 class="text-lg font-medium mb-4">⏱️ Time by Project</h3>
+          <canvas id="chart-time-project" height="200"></canvas>
+        </div>
+        <!-- Success Rate Bar -->
+        <div class="card p-5">
+          <h3 class="text-lg font-medium mb-4">✅ Success Rate by Project</h3>
+          <canvas id="chart-success" height="200"></canvas>
+        </div>
+        <!-- Effort Stacked -->
+        <div class="card p-5">
+          <h3 class="text-lg font-medium mb-4">💻 Effort Breakdown</h3>
+          <canvas id="chart-effort" height="200"></canvas>
+        </div>
+        <!-- Bugs Severity -->
+        <div class="card p-5">
+          <h3 class="text-lg font-medium mb-4">🐛 Bugs by Severity</h3>
+          <canvas id="chart-severity" height="200"></canvas>
         </div>
       </div>
     </div>
     
-    <!-- Effort Breakdown -->
-    <div class="card p-5 mb-6">
-      <h3 class="text-lg font-medium mb-4">⚙️ Effort Breakdown</h3>
-      <div class="grid grid-cols-5 gap-4">
-        <div class="bg-gray-800 rounded p-3">
-          <div class="stat-label">Coding Time</div>
-          <div class="text-xl font-bold text-blue-400" id="effort-coder">0h</div>
+    <!-- TAB 3: Trends -->
+    <div id="tab-content-trends" class="hidden">
+      <!-- Time Filter Buttons -->
+      <div class="flex gap-2 mb-4">
+        <button onclick="setTrendWindow(7)" id="trend-7" class="px-3 py-1 rounded bg-gray-700 text-sm">Week</button>
+        <button onclick="setTrendWindow(30)" id="trend-30" class="px-3 py-1 rounded bg-blue-600 text-sm">Month</button>
+        <button onclick="setTrendWindow(90)" id="trend-90" class="px-3 py-1 rounded bg-gray-700 text-sm">Quarter</button>
+        <button onclick="setTrendWindow(365)" id="trend-365" class="px-3 py-1 rounded bg-gray-700 text-sm">All</button>
+      </div>
+      
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <!-- Runs Over Time -->
+        <div class="card p-5 col-span-2">
+          <h3 class="text-lg font-medium mb-4">📈 Runs Over Time</h3>
+          <canvas id="chart-runs-trend" height="100"></canvas>
         </div>
-        <div class="bg-gray-800 rounded p-3">
-          <div class="stat-label">Testing Time</div>
-          <div class="text-xl font-bold text-green-400" id="effort-tester">0h</div>
+        <!-- Cycle Time Trend -->
+        <div class="card p-5">
+          <h3 class="text-lg font-medium mb-4">⏱️ Cycle Time Trend</h3>
+          <canvas id="chart-cycle-trend" height="150"></canvas>
         </div>
-        <div class="bg-gray-800 rounded p-3">
-          <div class="stat-label">Total Effort</div>
-          <div class="text-xl font-bold" id="effort-total">0h</div>
+        <!-- Success Rate Trend -->
+        <div class="card p-5">
+          <h3 class="text-lg font-medium mb-4">✅ Success Rate Trend</h3>
+          <canvas id="chart-success-trend" height="150"></canvas>
         </div>
-        <div class="bg-gray-800 rounded p-3">
-          <div class="stat-label">Avg Dependencies</div>
-          <div class="text-xl font-bold" id="avg-deps">0</div>
+        <!-- Features vs Bugs -->
+        <div class="card p-5">
+          <h3 class="text-lg font-medium mb-4">📦 Features vs Bugs</h3>
+          <canvas id="chart-fv-bugs" height="150"></canvas>
         </div>
-        <div class="bg-gray-800 rounded p-3">
-          <div class="stat-label">API Changes</div>
-          <div class="text-xl font-bold text-purple-400" id="api-changes">0</div>
+        <!-- SF Utilization -->
+        <div class="card p-5">
+          <h3 class="text-lg font-medium mb-4">🏭 SF Utilization</h3>
+          <canvas id="chart-utilization" height="150"></canvas>
         </div>
       </div>
-    </div>
-    
-    <!-- T-Shirt & Severity -->
-    <div class="grid grid-cols-2 gap-6 mb-6">
+      
+      <!-- Summary -->
       <div class="card p-5">
-        <h3 class="text-lg font-medium mb-4">📏 Feature Time by T-Shirt Size</h3>
-        <div id="tshirt-stats"></div>
+        <h3 class="text-lg font-medium mb-4">📊 Summary: Last 30 days</h3>
+        <div class="grid grid-cols-4 gap-4 text-center">
+          <div>
+            <div class="stat-label">Total Runs</div>
+            <div class="text-2xl font-bold" id="summary-runs">0</div>
+          </div>
+          <div>
+            <div class="stat-label">Features</div>
+            <div class="text-2xl font-bold text-blue-400" id="summary-features">0</div>
+          </div>
+          <div>
+            <div class="stat-label">Avg Cycle Time</div>
+            <div class="text-2xl font-bold text-green-400" id="summary-cycle">0m</div>
+          </div>
+          <div>
+            <div class="stat-label">Success Rate</div>
+            <div class="text-2xl font-bold" id="summary-success">0%</div>
+          </div>
+        </div>
       </div>
-      <div class="card p-5">
-        <h3 class="text-lg font-medium mb-4">🐛 Bug Fix Time by Severity</h3>
-        <div id="severity-stats"></div>
-      </div>
-    </div>
-    
-    <!-- Recent Runs Table -->
-    <div class="card p-5">
-      <h3 class="text-lg font-medium mb-4">Recent Runs</h3>
-      <table class="w-full text-sm">
-        <thead>
-          <tr class="text-left text-gray-400 border-b border-gray-700">
-            <th class="pb-2">Project</th>
-            <th class="pb-2">Type</th>
-            <th class="pb-2">T-Shirt</th>
-            <th class="pb-2">Version</th>
-            <th class="pb-2">Description</th>
-            <th class="pb-2">Time</th>
-            <th class="pb-2">Coder</th>
-            <th class="pb-2">Test</th>
-            <th class="pb-2">Deps</th>
-            <th class="pb-2">Status</th>
-          </tr>
-        </thead>
-        <tbody id="recent-runs"></tbody>
-      </table>
     </div>
   </div>
 
   <script>
     let allRuns = [];
+    let charts = {};
+    let currentTab = 'overview';
+    let trendWindow = 30;
+    
+    // Mock historical data for demo
+    const mockHistoricalData = [
+      { date: '2026-02-01', features: 2, bugs: 1, success: 100, cycleTime: 15 },
+      { date: '2026-02-08', features: 3, bugs: 2, success: 80, cycleTime: 18 },
+      { date: '2026-02-15', features: 1, bugs: 3, success: 100, cycleTime: 12 },
+      { date: '2026-02-22', features: 4, bugs: 1, success: 100, cycleTime: 14 },
+      { date: '2026-03-01', features: 2, bugs: 2, success: 100, cycleTime: 11 },
+      { date: '2026-03-08', features: 3, bugs: 1, success: 100, cycleTime: 10 },
+      { date: '2026-03-15', features: 5, bugs: 2, success: 100, cycleTime: 12 },
+    ];
+    
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('tab-' + tab).classList.add('active');
+      document.querySelectorAll('[id^="tab-content-"]').forEach(d => d.classList.add('hidden'));
+      document.getElementById('tab-content-' + tab).classList.remove('hidden');
+      
+      if (tab === 'visual') renderVisualCharts();
+      if (tab === 'trends') renderTrendCharts();
+    }
+    
+    function setTrendWindow(days) {
+      trendWindow = days;
+      document.querySelectorAll('[id^="trend-"]').forEach(b => b.classList.remove('bg-blue-600'));
+      document.getElementById('trend-' + days).classList.add('bg-blue-600');
+      renderTrendCharts();
+    }
     
     function filterRuns(runs) {
       const project = document.getElementById('filter-project').value;
@@ -245,7 +384,7 @@
     }
     
     async function loadData() {
-      const [runsRes] = await Promise.all([fetch('/api/runs')]);
+      const runsRes = await fetch('/api/runs');
       const runs = await runsRes.json();
       allRuns = runs;
       
@@ -275,21 +414,14 @@
       const runsLast7d = runs.filter(r => new Date(r.startedAt) >= last7Days);
       const runsLast30d = runs.filter(r => new Date(r.startedAt) >= last30Days);
       
-      // Factory Uptime: % of time factory was active (running jobs)
-      // Calculate total time all runs took in last 30 days
       const totalRunTime30d = runsLast30d.reduce((sum, r) => sum + r.durationMs, 0);
-      const totalTime30d = 30 * 24 * 60 * 60 * 1000; // 30 days in ms
+      const totalTime30d = 30 * 24 * 60 * 60 * 1000;
       const factoryUptime = Math.round((totalRunTime30d / totalTime30d) * 100);
       document.getElementById('factory-uptime').textContent = factoryUptime + '%';
       
-      // Throughput: runs per week
-      const throughput = runsLast7d.length;
-      document.getElementById('throughput').textContent = throughput + ' runs';
-      
-      // Queue depth: 0 for now (could be extended)
+      document.getElementById('throughput').textContent = runsLast7d.length + ' runs';
       document.getElementById('queue-depth').textContent = '0';
       
-      // Idle time: average time between runs
       let totalIdle = 0;
       let idleCount = 0;
       for (let i = 1; i < runs.length; i++) {
@@ -305,7 +437,6 @@
       const avgIdleMins = Math.round(avgIdleMs / 60000);
       document.getElementById('idle-time').textContent = avgIdleMins < 60 ? avgIdleMins + 'm' : Math.round(avgIdleMins/60) + 'h';
       
-      // Success Rate
       const success = filtered.filter(r => r.status === 'SUCCESS').length;
       const rate = filtered.length > 0 ? Math.round(success / filtered.length * 100) : 0;
       document.getElementById('success-rate').textContent = rate + '%';
@@ -326,13 +457,11 @@
       document.getElementById('avg-feature').textContent = avgFeature + 'm';
       document.getElementById('avg-bug').textContent = avgBug + 'm';
       
-      // Test pass rate
       const totalTests = filtered.reduce((sum, r) => sum + (r.testsPassed || 0) + (r.testsFailed || 0), 0);
       const passedTests = filtered.reduce((sum, r) => sum + (r.testsPassed || 0), 0);
       const testRate = totalTests > 0 ? Math.round(passedTests / totalTests * 100) : 0;
       document.getElementById('test-pass-rate').textContent = testRate + '%';
       
-      // Rework rate
       const reopened = filtered.reduce((sum, r) => sum + (r.reopenedBugs || 0), 0);
       const reworkRate = bugs.length > 0 ? Math.round(reopened / bugs.length * 100) : 0;
       document.getElementById('rework-rate').textContent = reworkRate + '%';
@@ -356,15 +485,15 @@
       // === QUALITY METRICS ===
       const totalPassed = filtered.reduce((sum, r) => sum + (r.testsPassed || 0), 0);
       const totalFailed = filtered.reduce((sum, r) => sum + (r.testsFailed || 0), 0);
-      const totalReopened = filtered.reduce((sum, r) => sum + (r.reopenedBugs || 0), 0);
-      const failedRuns = filtered.filter(r => r.status !== 'SUCCESS').length;
+      const uatPassed = filtered.reduce((sum, r) => sum + (r.uatTestsPassed || 0), 0);
+      const uatFailed = filtered.reduce((sum, r) => sum + (r.uatTestsFailed || 0), 0);
       
       document.getElementById('tests-passed').textContent = totalPassed;
       document.getElementById('tests-failed').textContent = totalFailed;
-      document.getElementById('reopened-bugs').textContent = totalReopened;
-      document.getElementById('failed-runs').textContent = failedRuns;
+      document.getElementById('uat-passed').textContent = uatPassed;
+      document.getElementById('uat-failed').textContent = uatFailed;
       
-      // === EFFORT BREAKDOWN ===
+      // === EFFORT ===
       const coderTime = filtered.reduce((sum, r) => sum + (r.coderTimeMs || 0), 0);
       const testerTime = filtered.reduce((sum, r) => sum + (r.testerTimeMs || 0), 0);
       const totalEffort = coderTime + testerTime;
@@ -426,10 +555,8 @@
       const tbody = document.getElementById('recent-runs');
       tbody.innerHTML = filtered.slice(0, 15).map(r => {
         const mins = getDurationMins(r);
-        const coderMins = r.coderTimeMs ? Math.round(r.coderTimeMs / 60000) : '-';
-        const testerMins = r.testerTimeMs ? Math.round(r.testerTimeMs / 60000) : '-';
+        const testRate = r.testPassRate !== undefined ? r.testPassRate + '%' : '-';
         const tshirt = r.tshirtSize ? `<span class="px-1.5 py-0.5 rounded text-xs ${r.tshirtSize === 'S' ? 'bg-blue-900' : r.tshirtSize === 'M' ? 'bg-yellow-900' : r.tshirtSize === 'L' ? 'bg-orange-900' : r.tshirtSize === 'XL' ? 'bg-red-900' : 'bg-gray-700'}">${r.tshirtSize}</span>` : '-';
-        const deps = r.dependenciesAffected || '-';
         
         return `
         <tr class="border-b border-gray-800 hover:bg-gray-800/50">
@@ -439,12 +566,173 @@
           <td class="py-2 text-gray-400">v${r.version || '?'}</td>
           <td class="py-2 text-gray-300 text-xs max-w-xs truncate" title="${r.description || ''}">${r.description || '-'}</td>
           <td class="py-2">${mins}m</td>
-          <td class="py-2 text-gray-400">${coderMins}m</td>
-          <td class="py-2 text-gray-400">${testerMins}m</td>
-          <td class="py-2 text-gray-400">${deps}</td>
+          <td class="py-2 text-gray-400">${testRate}</td>
           <td class="py-2 ${r.status === 'SUCCESS' ? 'text-green-400' : 'text-red-400'}">${r.status}</td>
         </tr>`;
-      }).join('') || '<tr><td colspan="10" class="py-4 text-center text-gray-500">No runs</td></tr>';
+      }).join('') || '<tr><td colspan="8" class="py-4 text-center text-gray-500">No runs</td></tr>';
+    }
+    
+    function renderVisualCharts() {
+      const filtered = filterRuns(allRuns);
+      const features = filtered.filter(r => r.runType === 'FEATURE_BUILD');
+      const bugs = filtered.filter(r => r.runType === 'BUG_FIX');
+      const maint = filtered.filter(r => r.runType === 'MAINTENANCE');
+      
+      // Run Type Pie
+      if (charts.runType) charts.runType.destroy();
+      charts.runType = new Chart(document.getElementById('chart-run-type'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Features', 'Bug Fixes', 'Maintenance'],
+          datasets: [{
+            data: [features.length, bugs.length, maint.length],
+            backgroundColor: ['#3b82f6', '#ef4444', '#6b7280']
+          }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#9ca3af' } } } }
+      });
+      
+      // T-Shirt Pie
+      const tshirtCounts = {};
+      features.forEach(r => { const s = r.tshirtSize || 'Unknown'; tshirtCounts[s] = (tshirtCounts[s] || 0) + 1; });
+      if (charts.tshirt) charts.tshirt.destroy();
+      charts.tshirt = new Chart(document.getElementById('chart-tshirt'), {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(tshirtCounts),
+          datasets: [{ data: Object.values(tshirtCounts), backgroundColor: ['#22c55e', '#3b82f6', '#eab308', '#f97316', '#ef4444'] }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#9ca3af' } } } }
+      });
+      
+      // Time by Project
+      const projectTime = {};
+      filtered.forEach(r => { const p = r.projectId; projectTime[p] = (projectTime[p] || 0) + getDurationMins(r); });
+      if (charts.timeProject) charts.timeProject.destroy();
+      charts.timeProject = new Chart(document.getElementById('chart-time-project'), {
+        type: 'bar',
+        data: {
+          labels: Object.keys(projectTime),
+          datasets: [{ label: 'Minutes', data: Object.values(projectTime), backgroundColor: '#3b82f6' }]
+        },
+        options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#9ca3af' }, grid: { color: '#374151' } }, y: { ticks: { color: '#9ca3af' } } } }
+      });
+      
+      // Success Rate
+      const projectSuccess = {};
+      filtered.forEach(r => { const p = r.projectId; if (!projectSuccess[p]) projectSuccess[p] = { success: 0, total: 0 }; projectSuccess[p].total++; if (r.status === 'SUCCESS') projectSuccess[p].success++; });
+      const successRates = Object.keys(projectSuccess).map(p => Math.round(projectSuccess[p].success / projectSuccess[p].total * 100));
+      if (charts.success) charts.success.destroy();
+      charts.success = new Chart(document.getElementById('chart-success'), {
+        type: 'bar',
+        data: {
+          labels: Object.keys(projectSuccess),
+          datasets: [{ label: 'Success Rate %', data: successRates, backgroundColor: successRates.map(s => s >= 90 ? '#22c55e' : s >= 70 ? '#eab308' : '#ef4444') }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { max: 100, ticks: { color: '#9ca3af' }, grid: { color: '#374151' } }, x: { ticks: { color: '#9ca3af' } } } }
+      });
+      
+      // Effort
+      const effortByProject = {};
+      filtered.forEach(r => { const p = r.projectId; if (!effortByProject[p]) effortByProject[p] = { coder: 0, tester: 0 }; effortByProject[p].coder += (r.coderTimeMs || 0) / 60000; effortByProject[p].tester += (r.testerTimeMs || 0) / 60000; });
+      if (charts.effort) charts.effort.destroy();
+      charts.effort = new Chart(document.getElementById('chart-effort'), {
+        type: 'bar',
+        data: {
+          labels: Object.keys(effortByProject),
+          datasets: [
+            { label: 'Coding', data: Object.values(effortByProject).map(e => Math.round(e.coder)), backgroundColor: '#3b82f6' },
+            { label: 'Testing', data: Object.values(effortByProject).map(e => Math.round(e.tester)), backgroundColor: '#22c55e' }
+          ]
+        },
+        options: { responsive: true, plugins: { legend: { labels: { color: '#9ca3af' } } }, scales: { x: { stacked: true, ticks: { color: '#9ca3af' }, grid: { color: '#374151' } }, y: { stacked: true, ticks: { color: '#9ca3af' } } } }
+      });
+      
+      // Severity
+      const severityCounts = {};
+      bugs.forEach(r => { const s = r.severity || 'unknown'; severityCounts[s] = (severityCounts[s] || 0) + 1; });
+      if (charts.severity) charts.severity.destroy();
+      charts.severity = new Chart(document.getElementById('chart-severity'), {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(severityCounts),
+          datasets: [{ data: Object.values(severityCounts), backgroundColor: ['#22c55e', '#eab308', '#f97316', '#ef4444'] }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#9ca3af' } } } }
+      });
+    }
+    
+    function renderTrendCharts() {
+      // Use mock data for trends demo
+      const data = mockHistoricalData.slice(-Math.ceil(trendWindow/7));
+      
+      // Runs Over Time
+      if (charts.runsTrend) charts.runsTrend.destroy();
+      charts.runsTrend = new Chart(document.getElementById('chart-runs-trend'), {
+        type: 'line',
+        data: {
+          labels: data.map(d => d.date),
+          datasets: [
+            { label: 'Features', data: data.map(d => d.features), borderColor: '#3b82f6', backgroundColor: '#3b82f620', fill: true },
+            { label: 'Bugs', data: data.map(d => d.bugs), borderColor: '#ef4444', backgroundColor: '#ef444420', fill: true }
+          ]
+        },
+        options: { responsive: true, plugins: { legend: { labels: { color: '#9ca3af' } } }, scales: { x: { ticks: { color: '#9ca3af' }, grid: { color: '#374151' } }, y: { ticks: { color: '#9ca3af' }, grid: { color: '#374151' } } } }
+      });
+      
+      // Cycle Time
+      if (charts.cycleTrend) charts.cycleTrend.destroy();
+      charts.cycleTrend = new Chart(document.getElementById('chart-cycle-trend'), {
+        type: 'line',
+        data: {
+          labels: data.map(d => d.date),
+          datasets: [{ label: 'Avg Cycle Time (m)', data: data.map(d => d.cycleTime), borderColor: '#22c55e', backgroundColor: '#22c55e20', fill: true }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#9ca3af' }, grid: { color: '#374151' } }, y: { ticks: { color: '#9ca3af' }, grid: { color: '#374151' } } } }
+      });
+      
+      // Success Rate
+      if (charts.successTrend) charts.successTrend.destroy();
+      charts.successTrend = new Chart(document.getElementById('chart-success-trend'), {
+        type: 'line',
+        data: {
+          labels: data.map(d => d.date),
+          datasets: [{ label: 'Success Rate %', data: data.map(d => d.success), borderColor: '#a855f7', backgroundColor: '#a855f720', fill: true, tension: 0.3 }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#9ca3af' }, grid: { color: '#374151' } }, y: { max: 100, ticks: { color: '#9ca3af' }, grid: { color: '#374151' } } } }
+      });
+      
+      // Features vs Bugs
+      if (charts.fvBugs) charts.fvBugs.destroy();
+      charts.fvBugs = new Chart(document.getElementById('chart-fv-bugs'), {
+        type: 'bar',
+        data: {
+          labels: data.map(d => d.date),
+          datasets: [
+            { label: 'Features', data: data.map(d => d.features), backgroundColor: '#3b82f6' },
+            { label: 'Bugs', data: data.map(d => d.bugs), backgroundColor: '#ef4444' }
+          ]
+        },
+        options: { responsive: true, plugins: { legend: { labels: { color: '#9ca3af' } } }, scales: { x: { ticks: { color: '#9ca3af' }, grid: { color: '#374151' } }, y: { ticks: { color: '#9ca3af' }, grid: { color: '#374151' } } } }
+      });
+      
+      // SF Utilization
+      const utilData = data.map(d => Math.round((d.features + d.bugs) / 5 * 100));
+      if (charts.utilization) charts.utilization.destroy();
+      charts.utilization = new Chart(document.getElementById('chart-utilization'), {
+        type: 'line',
+        data: {
+          labels: data.map(d => d.date),
+          datasets: [{ label: 'Utilization %', data: utilData, borderColor: '#3b82f6', backgroundColor: '#3b82f640', fill: true }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#9ca3af' }, grid: { color: '#374151' } }, y: { max: 100, ticks: { color: '#9ca3af' }, grid: { color: '#374151' } } } }
+      });
+      
+      // Summary
+      document.getElementById('summary-runs').textContent = data.reduce((s, d) => s + d.features + d.bugs, 0);
+      document.getElementById('summary-features').textContent = data.reduce((s, d) => s + d.features, 0);
+      document.getElementById('summary-cycle').textContent = Math.round(data.reduce((s, d) => s + d.cycleTime, 0) / data.length) + 'm';
+      document.getElementById('summary-success').textContent = Math.round(data.reduce((s, d) => s + d.success, 0) / data.length) + '%';
     }
     
     loadData();
