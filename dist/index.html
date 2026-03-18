@@ -29,12 +29,12 @@
         <div class="stat-value" id="total-runs">-</div>
       </div>
       <div class="card p-4">
-        <div class="text-gray-400 text-sm">Total Time</div>
+        <div class="text-gray-400 text-sm">Estimated Time</div>
         <div class="stat-value" id="total-time">-</div>
       </div>
       <div class="card p-4">
-        <div class="text-gray-400 text-sm">Success Rate</div>
-        <div class="stat-value" id="success-rate">-</div>
+        <div class="text-gray-400 text-sm">Actual Time</div>
+        <div class="stat-value" id="actual-time">-</div>
       </div>
       <div class="card p-4">
         <div class="text-gray-400 text-sm">Projects</div>
@@ -63,7 +63,9 @@
             <th class="pb-2">Project</th>
             <th class="pb-2">Type</th>
             <th class="pb-2">Version</th>
-            <th class="pb-2">Duration</th>
+            <th class="pb-2">Description</th>
+            <th class="pb-2">Est.</th>
+            <th class="pb-2">Actual</th>
             <th class="pb-2">Status</th>
             <th class="pb-2">Date</th>
           </tr>
@@ -87,11 +89,13 @@
       document.getElementById('total-runs').textContent = summary.total || 0;
       document.getElementById('total-time').textContent = Math.round((summary.totalTime || 0) / 3600000 * 10) / 10 + 'h';
       
-      // Success rate
-      let success = 0, failed = 0;
-      Object.values(summary.byProject || {}).forEach(p => { success += p.success; failed += p.failed; });
-      const rate = (summary.total > 0) ? Math.round(success / (success + failed) * 100) : 0;
-      document.getElementById('success-rate').textContent = rate + '%';
+      // Calculate actual time from runs
+      const actualMs = (runs || []).reduce((sum, r) => {
+        const actual = r.actualDurationMinutes || r.durationMinutes || Math.round(r.durationMs / 60000);
+        return sum + (actual * 60000);
+      }, 0);
+      document.getElementById('actual-time').textContent = Math.round(actualMs / 3600000 * 10) / 10 + 'h';
+      
       document.getElementById('project-count').textContent = Object.keys(summary.byProject || {}).length;
       
       // By Project
@@ -99,7 +103,7 @@
       projectDiv.innerHTML = Object.entries(summary.byProject || {}).map(([name, data]) => `
         <div class="flex justify-between items-center">
           <span>${name}</span>
-          <span class="text-gray-400">${data.runs} runs (${Math.round(data.time / 60000)}m)</span>
+          <span class="text-gray-400">${data.runs} runs</span>
         </div>
       `).join('') || '<p class="text-gray-500">No data</p>';
       
@@ -108,22 +112,27 @@
       typeDiv.innerHTML = Object.entries(summary.byType || {}).map(([type, data]) => `
         <div class="flex justify-between items-center">
           <span>${type}</span>
-          <span class="text-gray-400">${data.runs} runs (${Math.round(data.time / 60000)}m)</span>
+          <span class="text-gray-400">${data.runs} runs</span>
         </div>
       `).join('') || '<p class="text-gray-500">No data</p>';
       
       // Recent Runs
       const tbody = document.getElementById('recent-runs');
-      tbody.innerHTML = (runs || []).slice(0, 10).map(r => `
+      tbody.innerHTML = (runs || []).slice(0, 10).map(r => {
+        const estMins = Math.round(r.durationMs / 60000);
+        const actualMins = r.actualDurationMinutes || estMins;
+        return `
         <tr class="border-b border-gray-800">
           <td class="py-2">${r.projectName || r.projectId}</td>
           <td class="py-2"><span class="text-xs px-2 py-1 rounded bg-blue-900 text-blue-300">${r.runType}</span></td>
           <td class="py-2 text-gray-400">v${r.version || '?'}</td>
-          <td class="py-2 text-gray-400">${Math.round(r.durationMs / 60000)}m</td>
+          <td class="py-2 text-gray-300 text-sm">${r.description || '-'}</td>
+          <td class="py-2 text-gray-400">${estMins}m</td>
+          <td class="py-2 ${actualMins < estMins ? 'text-green-400' : 'text-yellow-400'}">${actualMins}m</td>
           <td class="py-2 ${r.status === 'SUCCESS' ? 'text-green-400' : 'text-red-400'}">${r.status}</td>
           <td class="py-2 text-gray-400">${new Date(r.startedAt).toLocaleDateString()}</td>
         </tr>
-      `).join('') || '<tr><td colspan="6" class="py-4 text-center text-gray-500">No runs yet</td></tr>';
+      `}).join('') || '<tr><td colspan="8" class="py-4 text-center text-gray-500">No runs yet</td></tr>';
     }
     
     loadData();
