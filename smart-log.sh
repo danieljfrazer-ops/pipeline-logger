@@ -31,6 +31,10 @@ CODER_MS=""
 TESTER_MS=""
 TESTS_PASSED=0
 TESTS_FAILED=0
+UNIT_PASSED=0
+UNIT_FAILED=0
+UAT_PASSED=0
+UAT_FAILED=0
 DEPS=0
 API_CHANGES="false"
 SPEC_FILE=""
@@ -49,6 +53,10 @@ while [[ $# -gt 0 ]]; do
     --completed-at) COMPLETED_AT="$2"; shift 2;;
     --coder-ms) CODER_MS="$2"; shift 2;;
     --tester-ms) TESTER_MS="$2"; shift 2;;
+    --unit-passed) UNIT_PASSED="$2"; shift 2;;
+    --unit-failed) UNIT_FAILED="$2"; shift 2;;
+    --uat-passed) UAT_PASSED="$2"; shift 2;;
+    --uat-failed) UAT_FAILED="$2"; shift 2;;
     --tests-passed) TESTS_PASSED="$2"; shift 2;;
     --tests-failed) TESTS_FAILED="$2"; shift 2;;
     --deps) DEPS="$2"; shift 2;;
@@ -71,7 +79,11 @@ while [[ $# -gt 0 ]]; do
       echo "  --completed-at ISO      End timestamp"
       echo "  --coder-ms MS           Coder time in ms"
       echo "  --tester-ms MS          Tester time in ms"
-      echo "  --tests-passed N        Tests passed"
+      echo "  --unit-passed N         Unit tests passed (from coder)"
+      echo "  --unit-failed N         Unit tests failed (from coder)"
+      echo "  --uat-passed N          UAT tests passed (from tester)"
+      echo "  --uat-failed N         UAT tests failed (from tester)"
+      echo "  --tests-passed N        Tests passed (legacy)"
       echo "  --tests-failed N        Tests failed"
       echo "  --deps N                Dependencies affected"
       echo "  --api-changes true/false API changes made"
@@ -161,6 +173,10 @@ CMD="$LOGGER --project $PROJECT --type $TYPE --version $VERSION --status $STATUS
 [ -n "$COMPLETED_AT" ]    && CMD="$CMD --completed-at '$COMPLETED_AT'"
 [ -n "$CODER_MS" ]        && CMD="$CMD --coder-ms $CODER_MS"
 [ -n "$TESTER_MS" ]       && CMD="$CMD --tester-ms $TESTER_MS"
+[ "$UNIT_PASSED" -gt 0 ]  && CMD="$CMD --unit-passed $UNIT_PASSED"
+[ "$UNIT_FAILED" -gt 0 ]  && CMD="$CMD --unit-failed $UNIT_FAILED"
+[ "$UAT_PASSED" -gt 0 ]  && CMD="$CMD --uat-passed $UAT_PASSED"
+[ "$UAT_FAILED" -gt 0 ]  && CMD="$CMD --uat-failed $UAT_FAILED"
 [ "$TESTS_PASSED" -gt 0 ] && CMD="$CMD --tests-passed $TESTS_PASSED"
 [ "$TESTS_FAILED" -gt 0 ] && CMD="$CMD --tests-failed $TESTS_FAILED"
 [ "$DEPS" -gt 0 ]         && CMD="$CMD --deps $DEPS"

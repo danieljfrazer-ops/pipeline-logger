@@ -30,7 +30,12 @@ interface PipelineRun {
   architectTimeMs?: number;
   coderTimeMs?: number;
   testerTimeMs?: number;
-  // Quality metrics
+  // Test results - distinguish unit vs UAT
+  unitTestsPassed?: number;
+  unitTestsFailed?: number;
+  uatTestsPassed?: number;
+  uatTestsFailed?: number;
+  // Combined (for backward compatibility)
   testPassRate?: number;
   testsPassed?: number;
   testsFailed?: number;
@@ -79,6 +84,13 @@ function parseArgs() {
     architectMs: parseInt(get('architect-ms', '0') || '0', 10),
     coderMs: parseInt(get('coder-ms', '0') || '0', 10),
     testerMs: parseInt(get('tester-ms', '0') || '0', 10),
+    // Unit tests (from coder)
+    unitTestsPassed: get('unit-passed') ? parseInt(get('unit-passed')!, 10) : undefined,
+    unitTestsFailed: get('unit-failed') ? parseInt(get('unit-failed')!, 10) : undefined,
+    // UAT tests (from tester)
+    uatTestsPassed: get('uat-passed') ? parseInt(get('uat-passed')!, 10) : undefined,
+    uatTestsFailed: get('uat-failed') ? parseInt(get('uat-failed')!, 10) : undefined,
+    // Legacy (combined)
     testsPassed: get('tests-passed') ? parseInt(get('tests-passed')!, 10) : undefined,
     testsFailed: get('tests-failed') ? parseInt(get('tests-failed')!, 10) : undefined,
     reopenedBugs: get('reopened-bugs') ? parseInt(get('reopened-bugs')!, 10) : undefined,
@@ -133,6 +145,13 @@ async function main() {
       architectTimeMs: opts.architectMs || 0,
       coderTimeMs: opts.coderMs || 0,
       testerTimeMs: opts.testerMs || 0,
+      // Unit tests (from coder)
+      unitTestsPassed: opts.unitTestsPassed,
+      unitTestsFailed: opts.unitTestsFailed,
+      // UAT tests (from tester)
+      uatTestsPassed: opts.uatTestsPassed,
+      uatTestsFailed: opts.uatTestsFailed,
+      // Legacy/combined
       testPassRate,
       testsPassed: testsPassed || undefined,
       testsFailed: testsFailed || undefined,
