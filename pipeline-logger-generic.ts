@@ -18,6 +18,7 @@ interface PipelineRun {
   runType: string;
   tshirtSize?: 'XS' | 'S' | 'M' | 'L' | 'XL';
   severity?: 'low' | 'medium' | 'high' | 'critical';
+  complexity?: number;
   description?: string;
   version?: string;
   status: string;
@@ -25,12 +26,19 @@ interface PipelineRun {
   completedAt: string;
   durationMs: number;
   actualDurationMinutes?: number;
-  architectTimeMs: number;
-  coderTimeMs: number;
-  testerTimeMs: number;
+  // Effort breakdown (optional)
+  architectTimeMs?: number;
+  coderTimeMs?: number;
+  testerTimeMs?: number;
+  // Quality metrics
   testPassRate?: number;
   testsPassed?: number;
   testsFailed?: number;
+  reopenedBugs?: number;
+  // Additional
+  dependenciesAffected?: number;
+  apiChanges?: boolean;
+  testCoverage?: number;
   createdAt: string;
 }
 
@@ -61,6 +69,7 @@ function parseArgs() {
     type: get('type', 'MAINTENANCE'),
     tshirtSize: get('tshirt-size'),
     severity: get('severity'),
+    complexity: get('complexity') ? parseInt(get('complexity'), 10) : undefined,
     version: get('version'),
     status: get('status', 'SUCCESS'),
     description: get('description'),
@@ -72,6 +81,10 @@ function parseArgs() {
     testerMs: parseInt(get('tester-ms', '0') || '0', 10),
     testsPassed: get('tests-passed') ? parseInt(get('tests-passed')!, 10) : undefined,
     testsFailed: get('tests-failed') ? parseInt(get('tests-failed')!, 10) : undefined,
+    reopenedBugs: get('reopened-bugs') ? parseInt(get('reopened-bugs')!, 10) : undefined,
+    dependenciesAffected: get('deps') ? parseInt(get('deps')!, 10) : undefined,
+    apiChanges: get('api-changes') === 'true' ? true : get('api-changes') === 'false' ? false : undefined,
+    testCoverage: get('test-coverage') ? parseInt(get('test-coverage')!, 10) : undefined,
     action: get('action', 'log'),
   };
 }
@@ -110,18 +123,23 @@ async function main() {
       runType: opts.type,
       tshirtSize: opts.tshirtSize as any,
       severity: opts.severity as any,
+      complexity: opts.complexity,
       description: opts.description || undefined,
       version: opts.version || undefined,
       status: opts.status,
       startedAt: startedAt.toISOString(),
       completedAt: completedAt.toISOString(),
       durationMs: durationMs,
-      architectTimeMs: opts.architectMs,
-      coderTimeMs: opts.coderMs,
-      testerTimeMs: opts.testerMs,
+      architectTimeMs: opts.architectMs || 0,
+      coderTimeMs: opts.coderMs || 0,
+      testerTimeMs: opts.testerMs || 0,
       testPassRate,
       testsPassed: testsPassed || undefined,
       testsFailed: testsFailed || undefined,
+      reopenedBugs: opts.reopenedBugs,
+      dependenciesAffected: opts.dependenciesAffected,
+      apiChanges: opts.apiChanges,
+      testCoverage: opts.testCoverage,
       createdAt: new Date().toISOString(),
     };
     
