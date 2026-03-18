@@ -17,8 +17,8 @@
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
       <div>
-        <h1 class="text-2xl font-semibold">📊 Pipeline Dashboard</h1>
-        <p class="text-gray-400 mt-1">Development velocity & quality metrics</p>
+        <h1 class="text-2xl font-semibold">🏭 Pipeline Factory Dashboard</h1>
+        <p class="text-gray-400 mt-1">Development velocity & factory utilization</p>
       </div>
       <button onclick="loadData()" class="px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700">Refresh</button>
     </div>
@@ -44,15 +44,38 @@
         <div>
           <label class="stat-label block mb-1">Time Window</label>
           <select id="filter-window" onchange="loadData()" class="bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm">
-            <option value="all">All Time</option>
             <option value="7">Last 7 Days</option>
-            <option value="30">Last 30 Days</option>
+            <option value="30" selected>Last 30 Days</option>
             <option value="90">Last 90 Days</option>
           </select>
         </div>
         <div class="ml-auto text-sm text-gray-400">
           <span id="filter-count">0</span> runs
         </div>
+      </div>
+    </div>
+    
+    <!-- Factory Utilization Row -->
+    <div class="grid grid-cols-5 gap-4 mb-6">
+      <div class="card p-4 border-blue-500/50">
+        <div class="stat-label">🏭 Factory Uptime</div>
+        <div class="stat-value text-blue-400" id="factory-uptime">-</div>
+      </div>
+      <div class="card p-4">
+        <div class="stat-label">⚡ Throughput (7d)</div>
+        <div class="stat-value" id="throughput">-</div>
+      </div>
+      <div class="card p-4">
+        <div class="stat-label">📦 Runs in Queue</div>
+        <div class="stat-value" id="queue-depth">0</div>
+      </div>
+      <div class="card p-4">
+        <div class="stat-label">⏱️ Avg Idle Time</div>
+        <div class="stat-value" id="idle-time">-</div>
+      </div>
+      <div class="card p-4">
+        <div class="stat-label">🎯 Success Rate</div>
+        <div class="stat-value" id="success-rate">-</div>
       </div>
     </div>
     
@@ -71,12 +94,12 @@
         <div class="stat-value" id="avg-bug">-</div>
       </div>
       <div class="card p-4">
-        <div class="stat-label">Success Rate</div>
-        <div class="stat-value" id="success-rate">-</div>
-      </div>
-      <div class="card p-4">
         <div class="stat-label">Test Pass Rate</div>
         <div class="stat-value" id="test-pass-rate">-</div>
+      </div>
+      <div class="card p-4">
+        <div class="stat-label">Rework Rate</div>
+        <div class="stat-value" id="rework-rate">-</div>
       </div>
     </div>
     
@@ -99,8 +122,8 @@
             <div class="text-2xl font-bold" id="avg-cycle">0m</div>
           </div>
           <div class="bg-gray-800 rounded p-3">
-            <div class="stat-label">Rework Rate</div>
-            <div class="text-2xl font-bold" id="rework-rate">0%</div>
+            <div class="stat-label">Bugs/Feature</div>
+            <div class="text-2xl font-bold" id="bugs-per-feature">0</div>
           </div>
         </div>
       </div>
@@ -110,11 +133,11 @@
         <h3 class="text-lg font-medium mb-4">🎯 Quality Metrics</h3>
         <div class="grid grid-cols-2 gap-4">
           <div class="bg-gray-800 rounded p-3">
-            <div class="stat-label">Total Tests Passed</div>
+            <div class="stat-label">Tests Passed</div>
             <div class="text-2xl font-bold text-green-400" id="tests-passed">0</div>
           </div>
           <div class="bg-gray-800 rounded p-3">
-            <div class="stat-label">Total Tests Failed</div>
+            <div class="stat-label">Tests Failed</div>
             <div class="text-2xl font-bold text-red-400" id="tests-failed">0</div>
           </div>
           <div class="bg-gray-800 rounded p-3">
@@ -122,8 +145,8 @@
             <div class="text-2xl font-bold text-yellow-400" id="reopened-bugs">0</div>
           </div>
           <div class="bg-gray-800 rounded p-3">
-            <div class="stat-label">Bugs/Feature</div>
-            <div class="text-2xl font-bold" id="bugs-per-feature">0</div>
+            <div class="stat-label">Failed Runs</div>
+            <div class="text-2xl font-bold text-red-400" id="failed-runs">0</div>
           </div>
         </div>
       </div>
@@ -132,7 +155,7 @@
     <!-- Effort Breakdown -->
     <div class="card p-5 mb-6">
       <h3 class="text-lg font-medium mb-4">⚙️ Effort Breakdown</h3>
-      <div class="grid grid-cols-4 gap-4">
+      <div class="grid grid-cols-5 gap-4">
         <div class="bg-gray-800 rounded p-3">
           <div class="stat-label">Coding Time</div>
           <div class="text-xl font-bold text-blue-400" id="effort-coder">0h</div>
@@ -148,6 +171,10 @@
         <div class="bg-gray-800 rounded p-3">
           <div class="stat-label">Avg Dependencies</div>
           <div class="text-xl font-bold" id="avg-deps">0</div>
+        </div>
+        <div class="bg-gray-800 rounded p-3">
+          <div class="stat-label">API Changes</div>
+          <div class="text-xl font-bold text-purple-400" id="api-changes">0</div>
         </div>
       </div>
     </div>
@@ -176,9 +203,9 @@
             <th class="pb-2">Version</th>
             <th class="pb-2">Description</th>
             <th class="pb-2">Time</th>
-            <th class="pb-2">Tests</th>
+            <th class="pb-2">Coder</th>
+            <th class="pb-2">Test</th>
             <th class="pb-2">Deps</th>
-            <th class="pb-2">API</th>
             <th class="pb-2">Status</th>
           </tr>
         </thead>
@@ -205,12 +232,10 @@
         filtered = filtered.filter(r => r.runType === type);
       }
       
-      if (window !== 'all') {
-        const days = parseInt(window);
-        const cutoff = new Date();
-        cutoff.setDate(cutoff.getDate() - days);
-        filtered = filtered.filter(r => new Date(r.startedAt) >= cutoff);
-      }
+      const days = parseInt(window);
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - days);
+      filtered = filtered.filter(r => new Date(r.startedAt) >= cutoff);
       
       return filtered;
     }
@@ -223,6 +248,9 @@
       const [runsRes] = await Promise.all([fetch('/api/runs')]);
       const runs = await runsRes.json();
       allRuns = runs;
+      
+      // Sort by start time
+      runs.sort((a, b) => new Date(a.startedAt) - new Date(b.startedAt));
       
       // Update project filter options
       const projects = [...new Set(runs.map(r => r.projectId))];
@@ -237,7 +265,52 @@
       const filtered = filterRuns(runs);
       document.getElementById('filter-count').textContent = filtered.length;
       
-      // Key metrics
+      // === FACTORY METRICS ===
+      const now = new Date();
+      const last7Days = new Date();
+      last7Days.setDate(last7Days.getDate() - 7);
+      const last30Days = new Date();
+      last30Days.setDate(last30Days.getDate() - 30);
+      
+      const runsLast7d = runs.filter(r => new Date(r.startedAt) >= last7Days);
+      const runsLast30d = runs.filter(r => new Date(r.startedAt) >= last30Days);
+      
+      // Factory Uptime: % of time factory was active (running jobs)
+      // Calculate total time all runs took in last 30 days
+      const totalRunTime30d = runsLast30d.reduce((sum, r) => sum + r.durationMs, 0);
+      const totalTime30d = 30 * 24 * 60 * 60 * 1000; // 30 days in ms
+      const factoryUptime = Math.round((totalRunTime30d / totalTime30d) * 100);
+      document.getElementById('factory-uptime').textContent = factoryUptime + '%';
+      
+      // Throughput: runs per week
+      const throughput = runsLast7d.length;
+      document.getElementById('throughput').textContent = throughput + ' runs';
+      
+      // Queue depth: 0 for now (could be extended)
+      document.getElementById('queue-depth').textContent = '0';
+      
+      // Idle time: average time between runs
+      let totalIdle = 0;
+      let idleCount = 0;
+      for (let i = 1; i < runs.length; i++) {
+        const prevEnd = new Date(runs[i-1].completedAt);
+        const currStart = new Date(runs[i].startedAt);
+        const idle = currStart - prevEnd;
+        if (idle > 0) {
+          totalIdle += idle;
+          idleCount++;
+        }
+      }
+      const avgIdleMs = idleCount > 0 ? totalIdle / idleCount : 0;
+      const avgIdleMins = Math.round(avgIdleMs / 60000);
+      document.getElementById('idle-time').textContent = avgIdleMins < 60 ? avgIdleMins + 'm' : Math.round(avgIdleMins/60) + 'h';
+      
+      // Success Rate
+      const success = filtered.filter(r => r.status === 'SUCCESS').length;
+      const rate = filtered.length > 0 ? Math.round(success / filtered.length * 100) : 0;
+      document.getElementById('success-rate').textContent = rate + '%';
+      
+      // === KEY METRICS ===
       document.getElementById('total-runs').textContent = filtered.length;
       
       const features = filtered.filter(r => r.runType === 'FEATURE_BUILD');
@@ -253,51 +326,45 @@
       document.getElementById('avg-feature').textContent = avgFeature + 'm';
       document.getElementById('avg-bug').textContent = avgBug + 'm';
       
-      // Success rate
-      const success = filtered.filter(r => r.status === 'SUCCESS').length;
-      const rate = filtered.length > 0 ? Math.round(success / filtered.length * 100) : 0;
-      document.getElementById('success-rate').textContent = rate + '%';
-      
       // Test pass rate
       const totalTests = filtered.reduce((sum, r) => sum + (r.testsPassed || 0) + (r.testsFailed || 0), 0);
       const passedTests = filtered.reduce((sum, r) => sum + (r.testsPassed || 0), 0);
       const testRate = totalTests > 0 ? Math.round(passedTests / totalTests * 100) : 0;
       document.getElementById('test-pass-rate').textContent = testRate + '%';
       
-      // Velocity metrics
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      const thisWeek = filtered.filter(r => new Date(r.startedAt) >= weekAgo);
+      // Rework rate
+      const reopened = filtered.reduce((sum, r) => sum + (r.reopenedBugs || 0), 0);
+      const reworkRate = bugs.length > 0 ? Math.round(reopened / bugs.length * 100) : 0;
+      document.getElementById('rework-rate').textContent = reworkRate + '%';
+      
+      // === VELOCITY METRICS ===
+      const thisWeek = runs.filter(r => new Date(r.startedAt) >= last7Days);
       const featuresThisWeek = thisWeek.filter(r => r.runType === 'FEATURE_BUILD').length;
       const bugsThisWeek = thisWeek.filter(r => r.runType === 'BUG_FIX').length;
       
       document.getElementById('features-week').textContent = featuresThisWeek;
       document.getElementById('bugs-week').textContent = bugsThisWeek;
       
-      // Avg cycle time (just total time / runs for now)
       const avgCycle = filtered.length > 0 
         ? Math.round(filtered.reduce((sum, r) => sum + getDurationMins(r), 0) / filtered.length)
         : 0;
       document.getElementById('avg-cycle').textContent = avgCycle + 'm';
       
-      // Rework rate (reopened bugs / total bugs)
-      const reopened = filtered.reduce((sum, r) => sum + (r.reopenedBugs || 0), 0);
-      const reworkRate = bugs.length > 0 ? Math.round(reopened / bugs.length * 100) : 0;
-      document.getElementById('rework-rate').textContent = reworkRate + '%';
+      const bugsPerFeature = features.length > 0 ? (bugs.length / features.length).toFixed(1) : '0';
+      document.getElementById('bugs-per-feature').textContent = bugsPerFeature;
       
-      // Quality metrics
+      // === QUALITY METRICS ===
       const totalPassed = filtered.reduce((sum, r) => sum + (r.testsPassed || 0), 0);
       const totalFailed = filtered.reduce((sum, r) => sum + (r.testsFailed || 0), 0);
       const totalReopened = filtered.reduce((sum, r) => sum + (r.reopenedBugs || 0), 0);
+      const failedRuns = filtered.filter(r => r.status !== 'SUCCESS').length;
       
       document.getElementById('tests-passed').textContent = totalPassed;
       document.getElementById('tests-failed').textContent = totalFailed;
       document.getElementById('reopened-bugs').textContent = totalReopened;
+      document.getElementById('failed-runs').textContent = failedRuns;
       
-      const bugsPerFeature = features.length > 0 ? (bugs.length / features.length).toFixed(1) : '0';
-      document.getElementById('bugs-per-feature').textContent = bugsPerFeature;
-      
-      // Effort breakdown
+      // === EFFORT BREAKDOWN ===
       const coderTime = filtered.reduce((sum, r) => sum + (r.coderTimeMs || 0), 0);
       const testerTime = filtered.reduce((sum, r) => sum + (r.testerTimeMs || 0), 0);
       const totalEffort = coderTime + testerTime;
@@ -310,7 +377,10 @@
       const avgDeps = filtered.length > 0 ? (depsAffected / filtered.length).toFixed(1) : '0';
       document.getElementById('avg-deps').textContent = avgDeps;
       
-      // T-Shirt Stats
+      const apiChanges = filtered.filter(r => r.apiChanges === true).length;
+      document.getElementById('api-changes').textContent = apiChanges;
+      
+      // === T-SHIRT STATS ===
       const tshirtStats = {};
       features.forEach(r => {
         const size = r.tshirtSize || 'Unknown';
@@ -331,7 +401,7 @@
         </div>`;
       }).join('') || '<p class="text-gray-500">No T-shirt data</p>';
       
-      // Severity Stats
+      // === SEVERITY STATS ===
       const severityStats = {};
       bugs.forEach(r => {
         const sev = r.severity || 'unknown';
@@ -352,14 +422,14 @@
         </div>`;
       }).join('') || '<p class="text-gray-500">No severity data</p>';
       
-      // Recent Runs Table
+      // === RECENT RUNS TABLE ===
       const tbody = document.getElementById('recent-runs');
       tbody.innerHTML = filtered.slice(0, 15).map(r => {
         const mins = getDurationMins(r);
-        const testRate = r.testPassRate !== undefined ? r.testPassRate + '%' : '-';
+        const coderMins = r.coderTimeMs ? Math.round(r.coderTimeMs / 60000) : '-';
+        const testerMins = r.testerTimeMs ? Math.round(r.testerTimeMs / 60000) : '-';
         const tshirt = r.tshirtSize ? `<span class="px-1.5 py-0.5 rounded text-xs ${r.tshirtSize === 'S' ? 'bg-blue-900' : r.tshirtSize === 'M' ? 'bg-yellow-900' : r.tshirtSize === 'L' ? 'bg-orange-900' : r.tshirtSize === 'XL' ? 'bg-red-900' : 'bg-gray-700'}">${r.tshirtSize}</span>` : '-';
         const deps = r.dependenciesAffected || '-';
-        const api = r.apiChanges ? '✅' : '-';
         
         return `
         <tr class="border-b border-gray-800 hover:bg-gray-800/50">
@@ -369,9 +439,9 @@
           <td class="py-2 text-gray-400">v${r.version || '?'}</td>
           <td class="py-2 text-gray-300 text-xs max-w-xs truncate" title="${r.description || ''}">${r.description || '-'}</td>
           <td class="py-2">${mins}m</td>
-          <td class="py-2 text-gray-400">${testRate}</td>
+          <td class="py-2 text-gray-400">${coderMins}m</td>
+          <td class="py-2 text-gray-400">${testerMins}m</td>
           <td class="py-2 text-gray-400">${deps}</td>
-          <td class="py-2">${api}</td>
           <td class="py-2 ${r.status === 'SUCCESS' ? 'text-green-400' : 'text-red-400'}">${r.status}</td>
         </tr>`;
       }).join('') || '<tr><td colspan="10" class="py-4 text-center text-gray-500">No runs</td></tr>';
