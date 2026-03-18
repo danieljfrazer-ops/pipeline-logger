@@ -23,7 +23,7 @@
     </div>
     
     <!-- Stats Cards -->
-    <div class="grid grid-cols-4 gap-4 mb-8" id="stats">
+    <div class="grid grid-cols-4 gap-4 mb-8">
       <div class="card p-4">
         <div class="text-gray-400 text-sm">Total Runs</div>
         <div class="stat-value" id="total-runs">-</div>
@@ -42,16 +42,15 @@
       </div>
     </div>
     
-    <!-- By Project -->
+    <!-- By Project / By Type -->
     <div class="grid grid-cols-2 gap-6">
       <div class="card p-5">
         <h3 class="text-lg font-medium mb-4">By Project</h3>
-        <div id="by-project" class="space-y-3"></div>
+        <div id="by-project"></div>
       </div>
-      
       <div class="card p-5">
         <h3 class="text-lg font-medium mb-4">By Type</h3>
-        <div id="by-type" class="space-y-3"></div>
+        <div id="by-type"></div>
       </div>
     </div>
     
@@ -88,15 +87,16 @@
       document.getElementById('total-runs').textContent = summary.total || 0;
       document.getElementById('total-time').textContent = Math.round((summary.totalTime || 0) / 3600000 * 10) / 10 + 'h';
       
-      const success = Object.values(summary.byProject || {}).reduce((s, p) => s + p.success, 0);
-      const failed = Object.values(summary.byProject || {}).reduce((s, p) => s + p.failed, 0);
+      // Success rate
+      let success = 0, failed = 0;
+      Object.values(summary.byProject || {}).forEach(p => { success += p.success; failed += p.failed; });
       const rate = (summary.total > 0) ? Math.round(success / (success + failed) * 100) : 0;
       document.getElementById('success-rate').textContent = rate + '%';
       document.getElementById('project-count').textContent = Object.keys(summary.byProject || {}).length;
       
       // By Project
       const projectDiv = document.getElementById('by-project');
-      projectDiv.innerHTML = Object.entries(summary.byProject || {}).map(([name, data]: [string, any]) => `
+      projectDiv.innerHTML = Object.entries(summary.byProject || {}).map(([name, data]) => `
         <div class="flex justify-between items-center">
           <span>${name}</span>
           <span class="text-gray-400">${data.runs} runs (${Math.round(data.time / 60000)}m)</span>
@@ -105,7 +105,7 @@
       
       // By Type
       const typeDiv = document.getElementById('by-type');
-      typeDiv.innerHTML = Object.entries(summary.byType || {}).map(([type, data]: [string, any]) => `
+      typeDiv.innerHTML = Object.entries(summary.byType || {}).map(([type, data]) => `
         <div class="flex justify-between items-center">
           <span>${type}</span>
           <span class="text-gray-400">${data.runs} runs (${Math.round(data.time / 60000)}m)</span>
@@ -120,7 +120,7 @@
           <td class="py-2"><span class="text-xs px-2 py-1 rounded bg-blue-900 text-blue-300">${r.runType}</span></td>
           <td class="py-2 text-gray-400">v${r.version || '?'}</td>
           <td class="py-2 text-gray-400">${Math.round(r.durationMs / 60000)}m</td>
-          <td class="py-2"><span class="${r.status === 'SUCCESS' ? 'text-green-400' : 'text-red-400'}">${r.status}</span></td>
+          <td class="py-2 ${r.status === 'SUCCESS' ? 'text-green-400' : 'text-red-400'}">${r.status}</td>
           <td class="py-2 text-gray-400">${new Date(r.startedAt).toLocaleDateString()}</td>
         </tr>
       `).join('') || '<tr><td colspan="6" class="py-4 text-center text-gray-500">No runs yet</td></tr>';
