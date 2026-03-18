@@ -22,6 +22,8 @@ interface PipelineRun {
   startedAt: string;
   completedAt: string;
   durationMs: number;
+  durationMinutes?: number;
+  actualDurationMinutes?: number;
   architectTimeMs: number;
   coderTimeMs: number;
   testerTimeMs: number;
@@ -60,6 +62,8 @@ function parseArgs() {
     status: get('status', 'SUCCESS'),
     description: get('description'),
     durationMs: parseInt(get('duration-ms', '0') || '0', 10),
+    startedAt: get('started-at'),  // ISO timestamp for auto-capture
+    completedAt: get('completed-at'), // ISO timestamp for auto-capture
     architectMs: parseInt(get('architect-ms', '0') || '0', 10),
     coderMs: parseInt(get('coder-ms', '0') || '0', 10),
     testerMs: parseInt(get('tester-ms', '0') || '0', 10),
@@ -79,8 +83,22 @@ async function main() {
       ? Math.round((testsPassed / (testsPassed + testsFailed)) * 100)
       : undefined;
     
-    const completedAt = new Date();
-    const startedAt = new Date(completedAt.getTime() - opts.durationMs);
+    // Calculate timestamps: use provided ISO times, or calculate from duration
+    let startedAt: Date;
+    let completedAt: Date;
+    let durationMs: number;
+    
+    if (opts.startedAt && opts.completedAt) {
+      // Auto-capture mode: use actual timestamps
+      startedAt = new Date(opts.startedAt);
+      completedAt = new Date(opts.completedAt);
+      durationMs = completedAt.getTime() - startedAt.getTime();
+    } else {
+      // Legacy mode: calculate from duration
+      completedAt = new Date();
+      startedAt = new Date(completedAt.getTime() - opts.durationMs);
+      durationMs = opts.durationMs;
+    }
     
     const run: PipelineRun = {
       id: `run-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -92,7 +110,8 @@ async function main() {
       status: opts.status,
       startedAt: startedAt.toISOString(),
       completedAt: completedAt.toISOString(),
-      durationMs: opts.durationMs,
+      durationMs: durationMs,
+      durationMinutes: Math.round(durationMs / 60000),
       architectTimeMs: opts.architectMs,
       coderTimeMs: opts.coderMs,
       testerTimeMs: opts.testerMs,
