@@ -5,6 +5,7 @@
 set -e
 
 LOGGER="npx tsx ~/projects/pipeline-logger/pipeline-logger-generic.ts"
+MC_LOGGER="cd ~/projects/mission-control && npx tsx lib/mc-pipeline-logger.ts"
 
 # Colors
 RED='\033[0;31m'
@@ -51,6 +52,7 @@ while [[ $# -gt 0 ]]; do
     --complexity) COMPLEXITY="$2"; shift 2;;
     --started-at) STARTED_AT="$2"; shift 2;;
     --completed-at) COMPLETED_AT="$2"; shift 2;;
+    --architect-ms) ARCHITECT_MS="$2"; shift 2;;
     --coder-ms) CODER_MS="$2"; shift 2;;
     --tester-ms) TESTER_MS="$2"; shift 2;;
     --unit-passed) UNIT_PASSED="$2"; shift 2;;
@@ -171,8 +173,9 @@ CMD="$LOGGER --project $PROJECT --type $TYPE --version $VERSION --status $STATUS
 [ -n "$COMPLEXITY" ]      && CMD="$CMD --complexity $COMPLEXITY"
 [ -n "$STARTED_AT" ]      && CMD="$CMD --started-at '$STARTED_AT'"
 [ -n "$COMPLETED_AT" ]    && CMD="$CMD --completed-at '$COMPLETED_AT'"
-[ -n "$CODER_MS" ]        && CMD="$CMD --coder-ms $CODER_MS"
-[ -n "$TESTER_MS" ]       && CMD="$CMD --tester-ms $TESTER_MS"
+[ -n "$ARCHITECT_MS" ]   && CMD="$CMD --architect-ms $ARCHITECT_MS"
+[ -n "$CODER_MS" ]       && CMD="$CMD --coder-ms $CODER_MS"
+[ -n "$TESTER_MS" ]      && CMD="$CMD --tester-ms $TESTER_MS"
 [ "$UNIT_PASSED" -gt 0 ]  && CMD="$CMD --unit-passed $UNIT_PASSED"
 [ "$UNIT_FAILED" -gt 0 ]  && CMD="$CMD --unit-failed $UNIT_FAILED"
 [ "$UAT_PASSED" -gt 0 ]  && CMD="$CMD --uat-passed $UAT_PASSED"
@@ -189,7 +192,34 @@ log "Type: $TYPE"
 [ -n "$VERSION" ] && log "Version: $VERSION"
 [ -n "$DESCRIPTION" ] && log "Description: $DESCRIPTION"
 
-# Run
+# Run JSON logger
 eval $CMD
+
+# Also log to Mission Control database (if available)
+if [ -d "$HOME/projects/mission-control" ]; then
+  MC_CMD="$MC_LOGGER --project $PROJECT --type $TYPE --version $VERSION --status $STATUS"
+  [ -n "$DESCRIPTION" ]    && MC_CMD="$MC_CMD --description '$DESCRIPTION'"
+  [ -n "$TSHIRT" ]          && MC_CMD="$MC_CMD --tshirt-size $TSHIRT"
+  [ -n "$SEVERITY" ]        && MC_CMD="$MC_CMD --severity $SEVERITY"
+  [ -n "$COMPLEXITY" ]       && MC_CMD="$MC_CMD --complexity $COMPLEXITY"
+  [ -n "$STARTED_AT" ]       && MC_CMD="$MC_CMD --started-at '$STARTED_AT'"
+  [ -n "$COMPLETED_AT" ]     && MC_CMD="$MC_CMD --completed-at '$COMPLETED_AT'"
+  [ -n "$CODER_MS" ]         && MC_CMD="$MC_CMD --coder-ms $CODER_MS"
+  [ -n "$TESTER_MS" ]        && MC_CMD="$MC_CMD --tester-ms $TESTER_MS"
+  [ "$UNIT_PASSED" -gt 0 ]   && MC_CMD="$MC_CMD --unit-passed $UNIT_PASSED"
+  [ "$UNIT_FAILED" -gt 0 ]   && MC_CMD="$MC_CMD --unit-failed $UNIT_FAILED"
+  [ "$UAT_PASSED" -gt 0 ]    && MC_CMD="$MC_CMD --uat-passed $UAT_PASSED"
+  [ "$UAT_FAILED" -gt 0 ]    && MC_CMD="$MC_CMD --uat-failed $UAT_FAILED"
+  [ "$TESTS_PASSED" -gt 0 ]  && MC_CMD="$MC_CMD --tests-passed $TESTS_PASSED"
+  [ "$TESTS_FAILED" -gt 0 ]   && MC_CMD="$MC_CMD --tests-failed $TESTS_FAILED"
+  [ "$DEPS" -gt 0 ]          && MC_CMD="$MC_CMD --deps $DEPS"
+  [ "$API_CHANGES" != "false" ] && MC_CMD="$MC_CMD --api-changes $API_CHANGES"
+  
+  if eval $MC_CMD 2>/dev/null; then
+    log "Logged to Mission Control"
+  else
+    warn "Could not log to Mission Control (DB may be unavailable)"
+  fi
+fi
 
 log "Done!"
